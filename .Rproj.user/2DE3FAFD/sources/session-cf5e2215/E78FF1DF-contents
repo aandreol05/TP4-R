@@ -153,3 +153,110 @@ par(mfrow = c(1, 1))
 - **c.** La **ligne `r ligne_max_moy`** possède l'altitude moyenne la plus élevée ($`r round(max(rowMeans(volcano)), 2)`$ m)[cite: 3].
 - **d.** La **colonne `r col_max_denivele`** présente le plus fort dénivelé avec **`r max(deniveles)` m** d'amplitude[cite: 3].
 - **e.** L'inversion de l'ordre des lignes (`nrow(volcano):1`) permet de retourner verticalement la matrice topographique[cite: 3].
+
+
+---
+
+# Partie B : Algèbre linéaire appliquée
+
+## B1
+
+```{r B1}
+# a. Chiffre d'affaires de chaque magasin par produit matriciel
+ca_magasins <- Q %*% prix
+ca_magasins
+
+# b. Marge de chaque magasin (prix - coût unitaire)
+marge_unitaire <- prix - cout
+marge_magasins <- Q %*% marge_unitaire
+marge_magasins
+
+# c. Matrice du CA par magasin et par produit (3x4) via diag(prix)
+CA_detail <- Q %*% diag(prix)
+colnames(CA_detail) <- colnames(Q)
+CA_detail
+
+# Combinaison magasin x produit rapportant le plus
+pos_max_ca <- which(CA_detail == max(CA_detail), arr.ind = TRUE)
+mag_top <- rownames(CA_detail)[pos_max_ca[1, 1]]
+prod_top <- colnames(CA_detail)[pos_max_ca[1, 2]]
+
+# d. Vérification que la somme des lignes redonne la réponse a.
+all.equal(rowSums(CA_detail), as.vector(ca_magasins), check.attributes = FALSE)
+```
+
+- **a.** Le chiffre d'affaires hebdomadaire s'élève à **`r ca_magasins["Lyon", 1]` €** pour Lyon, **`r ca_magasins["Lille", 1]` €** pour Lille et **`r ca_magasins["Nantes", 1]` €** pour Nantes[cite: 3].
+- **b.** La marge générée est de **`r marge_magasins["Lyon", 1]` €** pour Lyon, **`r marge_magasins["Lille", 1]` €** pour Lille et **`r marge_magasins["Nantes", 1]` €** pour Nantes[cite: 3].
+- **c.** La combinaison magasin $\times$ produit qui rapporte le plus est **`r mag_top` – `r prod_top`** avec un montant de **`r max(CA_detail)` €**[cite: 3].
+- **d.** La fonction `rowSums(CA_detail)` redonne exactement les mêmes montants que le produit matriciel `Q %*% prix`[cite: 3].
+
+## B2
+
+```{r B2}
+# a. Résolution du système linéaire M * x = stock
+quantites_aliments <- solve(M, stock)
+names(quantites_aliments) <- paste0("Aliment_", 1:4)
+quantites_aliments
+
+# b. Vérification de la solution
+all.equal(as.vector(M %*% quantites_aliments), stock)
+
+# c. Remplacement de la 4e ligne par la somme des lignes 1 et 2
+M_sing <- M
+M_sing[4, ] <- M_sing[1, ] + M_sing[2, ]
+
+det_M_sing <- det(M_sing)
+det_M_sing
+
+# Appel sécurisé à solve() pour éviter l'arrêt du knit
+tryCatch(solve(M_sing, stock), error = function(e) e$message)
+```
+
+- **a.** Pour épuiser exactement le stock, il faut produire respectivement **`r quantites_aliments[1]`**, **`r quantites_aliments[2]`**, **`r quantites_aliments[3]`** et **`r quantites_aliments[4]` tonnes** des quatre aliments[cite: 4].
+- **b.** Le produit matriciel `M %*% quantites_aliments` redonne exactement le vecteur `stock` (`r paste(stock, collapse = ", ")`)[cite: 4].
+- **c.** Le déterminant de cette nouvelle matrice est nul (`det(M_sing)` $\approx$ **`r round(det_M_sing, 16)`**). L'appel à `solve()` génère une erreur (`system is computationally singular`) car les lignes de la matrice sont désormais linéairement dépendantes (la 4e ligne est une combinaison linéaire des deux premières) : la matrice n'est donc plus inversible[cite: 4].
+
+## B3
+
+```{r B3}
+# a. Vérification que chaque ligne de P somme à 1
+rowSums(P)
+all.equal(as.vector(rowSums(P)), rep(1, nrow(P)))
+
+# b. Parts de marché dans 1, 2 et 3 mois
+parts1 <- parts0 %*% P
+parts2 <- parts1 %*% P
+parts3 <- parts2 %*% P
+
+rbind(Mois_1 = parts1, Mois_2 = parts2, Mois_3 = parts3)
+
+# c. Calcul des parts dans 12 mois via P^2, P^4 et P^8
+P2 <- P %*% P
+P4 <- P2 %*% P2
+P8 <- P4 %*% P4
+P12 <- P8 %*% P4
+
+parts12 <- parts0 %*% P12
+parts12
+
+# d. Calcul de P^64 par élévations au carré successives
+P16 <- P8 %*% P8
+P32 <- P16 %*% P16
+P64 <- P32 %*% P32
+round(P64, 6)
+
+# e. Recherche de la distribution stationnaire avec eigen()
+res_eigen <- eigen(t(P))
+pi_stat <- Re(res_eigen$vectors[, 1])
+pi_stat <- pi_stat / sum(pi_stat)
+names(pi_stat) <- colnames(P)
+
+round(pi_stat, 6)
+all.equal(as.vector(P64[1, ]), as.vector(pi_stat))
+```
+
+- **a.** La somme de chaque ligne de `P` vaut bien **1**, confirmant qu'il s'agit d'une matrice stochastique (de transition)[cite: 4].
+- **b.** Au bout de 3 mois, les parts de marché sont de **`r round(parts3[1]*100, 2)` %** pour A, **`r round(parts3[2]*100, 2)` %** pour B et **`r round(parts3[3]*100, 2)` %** pour C[cite: 4].
+- **c.** Dans 12 mois ($P^{12} = P^8 \times P^4$), les parts de marché atteindront **`r round(parts12[1]*100, 2)` %** pour A, **`r round(parts12[2]*100, 2)` %** pour B et **`r round(parts12[3]*100, 2)` %** pour C[cite: 4].
+- **d.** On remarque que les **trois lignes de $P^{64}$ sont identiques**. Cela signifie qu'à long terme (horizon de 64 mois), la chaîne de Markov converge vers un état d'équilibre indépendant de l'opérateur d'origine du client[cite: 4].
+- **e.** Le vecteur propre normalisé de $P^\top$ associé à la valeur propre 1 donne la distribution stationnaire $\pi = (`r paste(round(pi_stat, 4), collapse = ", ")`)$, qui est strictement identique aux lignes de $P^{64}$[cite: 4].
