@@ -3,7 +3,7 @@
     "path": "~/Documents/INGENIEUR/COURS/2026-2027/semestre-1/R/TP/TP4/tp4/tp4_Andrea_Andreoli.Rmd",
     "project_path": "tp4_Andrea_Andreoli.Rmd",
     "type": "r_markdown",
-    "hash": "2430397937",
+    "hash": "2308360148",
     "contents": "",
     "dirty": true,
     "created": 1794929420197.0,
@@ -13,15 +13,15 @@
         "tempName": "Untitled1",
         "source_window_id": "",
         "Source": "Source",
-        "cursorPosition": "46,175",
-        "scrollLine": "27"
+        "cursorPosition": "154,131",
+        "scrollLine": "138"
     },
     "folds": "",
     "lastKnownWriteTime": 1794929443,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1794929557157,
+    "last_content_update": 1794929687019,
     "read_only": false,
     "read_only_alternatives": []
 }
