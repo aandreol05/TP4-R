@@ -365,3 +365,162 @@ all.equal(survie_df, survie_classe)
 
 - On obtient un data frame de **`r nrow(df_titanic)` lignes**, car l'array d'origine comporte $4 \text{ (classes)} \times 2 \text{ (sexes)} \times 2 \text{ (âges)} \times 2 \text{ (survie)} = 32$ combinaisons possibles, chaque combinaison devenant une ligne associée à son effectif (`Freq`)[cite: 5].
 - La fonction `xtabs(Freq ~ Class + Survived, data = df_titanic)` permet de reconstituer la table de contingence et de retrouver exactement les taux de survie par classe calculés en C2[cite: 5].
+
+---
+
+# Partie D : Listes et résultats de fonctions
+
+## D1
+
+**Prédictions avant exécution :**
+
+1. `l[1]` : **classe `list`**. Les crochets simples extraient une sous-liste de longueur 1 contenant l'élément nommé `a` (le vecteur `1:3`).
+2. `l[[1]]` : **classe `integer`**. Les doubles crochets extraient directement le contenu du premier élément, à savoir le vecteur d'entiers `1, 2, 3`.
+3. `l$c$e` : **classe `numeric`**. Accède à la sous-liste `c`, puis extrait directement la valeur de son élément `e`, soit `2.5`.
+4. `l[["c"]]["d"]` : **classe `list`**. `l[["c"]]` extrait la sous-liste `c`, et `["d"]` en extrait une sous-liste de longueur 1 contenant `d = TRUE`.
+5. `length(l)` : **classe `integer`**. Renvoie le nombre d'éléments de premier niveau de la liste `l`, soit `3` (`a`, `b` et `c`).
+6. `unlist(l)` : **classe `character`**. Aplatit récursivement toute la liste en un seul vecteur atomique nommé de longueur 5 (`1, 2, 3, TRUE, 2.5`), converti en texte par coercition à cause de la présence de `"x"`.
+
+```{r D1}
+# Exécution et vérification
+l <- list(a = 1:3, b = "x", c = list(d = TRUE, e = 2.5))
+
+str(l[1])
+str(l[[1]])
+str(l$c$e)
+str(l[["c"]]["d"])
+length(l)
+unlist(l)
+class(unlist(l))
+```
+
+- **Explication :** La distinction fondamentale repose sur l'opérateur d'indexation (`[` conserve toujours l'enveloppe `list`, tandis que `[[` ou `$` extrait l'objet interne) ainsi que sur la règle de coercition de `unlist()`, qui aligne tous les éléments sur le type le plus souple (ici `character`)[cite: 5].
+
+## D2
+
+```{r D2}
+# Création de la liste fiche
+fiche <- list(
+  identite = list(
+    nom = "Dupont",
+    prenom = "Camille",
+    annee_naissance = 2004
+  ),
+  notes = c(R = 16.5, stat = 14, eco = 12.5, anglais = 15),
+  absences = 2L,
+  commentaires = c("Très bonne participation en TP.", "Travail régulier.")
+)
+
+# a. Affichage du prénom de deux façons différentes
+fiche$identite$prenom
+fiche[["identite"]][["prenom"]]
+
+# b. Calcul de la moyenne des notes à partir de la liste
+moyenne_fiche <- mean(fiche$notes)
+moyenne_fiche
+
+# c. Ajout de l'élément age calculé à partir de 2026
+fiche$age <- 2026 - fiche$identite$annee_naissance
+
+# d. Suppression de commentaires et affichage de la structure
+fiche$commentaires <- NULL
+str(fiche)
+```
+
+- **a.** Le prénom extrait par les deux méthodes est **`r fiche$identite$prenom`**[cite: 6].
+- **b.** La moyenne des 4 matières est de **`r moyenne_fiche` / 20**[cite: 6].
+- **c & d.** L'âge calculé est de **`r fiche$age` ans** et l'élément `commentaires` a bien été supprimé de la structure[cite: 6].
+
+## D3
+
+```{r D3}
+# a. Nombre d'étudiants et nom du 3e
+nb_etudiants <- length(promo)
+nom_3e <- promo[[3]]$nom
+
+# b. Extraction du vecteur des noms et celui des filières
+noms_promo <- sapply(promo, "[[", "nom")
+filieres_promo <- sapply(promo, "[[", "filiere")
+
+# c. Extraction de la liste des vecteurs de notes et nombre de notes par étudiant
+liste_notes <- lapply(promo, "[[", "notes")
+nb_notes <- lengths(liste_notes)
+
+# d. Calcul de la moyenne de chaque étudiant et création du data frame bilan trié
+moyennes_promo <- sapply(liste_notes, mean)
+
+bilan <- data.frame(
+  nom = noms_promo,
+  filiere = filieres_promo,
+  nb_notes = nb_notes,
+  moyenne = round(moyennes_promo, 2)
+)
+
+# Tri par moyenne décroissante
+bilan <- bilan[order(bilan$moyenne, decreasing = TRUE), ]
+bilan
+```
+
+- **a.** La liste `promo` contient **`r nb_etudiants` étudiants**, et le 3e étudiant se nomme **`r nom_3e`**[cite: 6].
+- **b.** Les noms sont `r paste(noms_promo, collapse = ", ")` et les filières sont `r paste(filieres_promo, collapse = ", ")`[cite: 6].
+- **c.** Le nombre de notes par étudiant est respectivement de **`r paste(nb_notes, collapse = ", ")`**[cite: 6].
+- **d.** L'étudiant en tête du classement est **`r bilan$nom[1]`** avec une moyenne de **`r bilan$moyenne[1]`**[cite: 6].
+- **e.** On ne peut pas ranger directement ces notes dans une matrice car **chaque étudiant possède un nombre différent de notes** (vecteurs de longueurs 2, 3 et 4), alors qu'une matrice exige un format rectangulaire strict où toutes les lignes ont exactement le même nombre de colonnes[cite: 6].
+
+## D4
+
+```{r D4}
+# a. Découpage en mots avec strsplit() et comptage par phrase
+mots_liste <- strsplit(phrases, split = " ")
+nb_mots_phrase <- lengths(mots_liste)
+nb_mots_phrase
+
+# b. Rassemblement en un seul vecteur en minuscules
+tous_mots <- tolower(unlist(mots_liste))
+total_mots <- length(tous_mots)
+mots_distincts <- length(unique(tous_mots))
+
+# c. Les 3 mots les plus fréquents
+freq_mots <- sort(table(tous_mots), decreasing = TRUE)
+top3_mots <- head(freq_mots, 3)
+top3_mots
+
+# d. Le mot le plus long
+mot_plus_long <- tous_mots[which.max(nchar(tous_mots))]
+mot_plus_long
+```
+
+- **a.** Chaque phrase compte respectivement **`r paste(nb_mots_phrase, collapse = ", ")` mots**[cite: 7].
+- **b.** Il y a **`r total_mots` mots au total**, dont **`r mots_distincts` mots distincts**[cite: 7].
+- **c.** Les 3 mots les plus fréquents sont **`r names(top3_mots)[1]`** (`r top3_mots[1]` fois), **`r names(top3_mots)[2]`** (`r top3_mots[2]` fois) et **`r names(top3_mots)[3]`** (`r top3_mots[3]` fois)[cite: 7].
+- **d.** Le mot le plus long est **`r mot_plus_long`** (avec `r nchar(mot_plus_long)` lettres)[cite: 7].
+
+## D5
+
+```{r D5}
+# a. Test de Student sur le jeu de données sleep
+res_ttest <- t.test(extra ~ group, data = sleep)
+diff_moy <- res_ttest$estimate[1] - res_ttest$estimate[2]
+ic_inf <- res_ttest$conf.int[1]
+ic_sup <- res_ttest$conf.int[2]
+pval <- res_ttest$p.value
+
+# b. Régression linéaire multiple sur mtcars
+mod_lm <- lm(mpg ~ wt + hp, data = mtcars)
+sum_lm <- summary(mod_lm)
+
+# Extraction des coefficients et du R²
+coefs <- coef(mod_lm)
+r2 <- sum_lm$r.squared
+
+coefs
+r2
+
+# Voiture ayant le résidu le plus grand en valeur absolue
+residus <- residuals(mod_lm)
+voiture_max_res <- names(which.max(abs(residus)))
+val_max_res <- residus[voiture_max_res]
+```
+
+- **a.** La comparaison des deux somnifères révèle une différence moyenne de sommeil supplémentaire de **`r round(diff_moy, 2)` heures** entre le groupe 1 et le groupe 2, avec un intervalle de confiance à 95 % de **`r paste0("[", round(ic_inf, 2), " ; ", round(ic_sup, 2), "]")`** et une p-valeur de **`r round(pval, 4)`** (ce qui ne permet pas de conclure à une différence statistiquement significative au seuil de 5 %)[cite: 7].
+- **b.** Dans le modèle linéaire, l'ordonnée à l'origine vaut **`r round(coefs[1], 2)`**, les coefficients associés au poids (`wt`) et à la puissance (`hp`) valent respectivement **`r round(coefs[2], 2)`** et **`r round(coefs[3], 4)`**, et le coefficient de détermination $R^2$ atteint **`r round(r2, 4)`** (soit `r round(r2 * 100, 1)` % de variance expliquée)[cite: 7]. La voiture présentant le résidu le plus important en valeur absolue est la **`r voiture_max_res`** avec un résidu de **`r round(val_max_res, 2)` mpg**[cite: 7].

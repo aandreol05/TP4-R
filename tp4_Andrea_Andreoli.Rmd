@@ -14,3 +14,513 @@ knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 # Chargement des objets fournis pour le TP (durer, candidat, Q, prix, cout, M, stock, P, parts0, promo, phrases)
 source("donnees_tp4.R")
 ```
+
+---
+
+# Partie A : Construire et manipuler des matrices
+
+## A1
+
+```{r A1}
+# Création de A (remplie par colonne par défaut) et B (remplie par ligne)
+A <- matrix(1:25, nrow = 5, ncol = 5)
+B <- matrix(1:25, nrow = 5, ncol = 5, byrow = TRUE)
+
+# Vérification en une seule instruction que B est la transposée de A
+identical(B, t(A))
+
+# Nommage des lignes et des colonnes de B
+rownames(B) <- paste0("L", 1:5)
+colnames(B) <- paste0("C", 1:5)
+
+# a. 3e colonne de B
+B[, 3]
+
+# b. Lignes 1 et 5 de B
+B[c(1, 5), ]
+
+# c. Colonne C1 par son nom sous forme de matrice (drop = FALSE)
+B[, "C1", drop = FALSE]
+```
+
+- L'instruction `identical(B, t(A))` renvoie **`r identical(B, t(A))`**, confirmant que la matrice $B$ est bien la transposée exacte de $A$.
+- L'utilisation de `drop = FALSE` dans `B[, "C1", drop = FALSE]` permet d'éviter la simplification en vecteur et de conserver la structure matricielle ($5 \times 1$)[cite: 1].
+
+## A2
+
+```{r A2}
+# Fixation de la graine aléatoire pour la reproductibilité
+set.seed(4)
+
+# Tirage selon N(mu = 3, sigma^2 = 10) -> l'écart-type sd vaut sqrt(10)
+X <- matrix(rnorm(36, mean = 3, sd = sqrt(10)), nrow = 6, ncol = 6)
+
+# a. Nombre d'éléments strictement supérieurs à 3
+nb_sup3 <- sum(X > 3)
+
+# b. Positions (ligne, colonne) du minimum et du maximum
+pos_min <- which(X == min(X), arr.ind = TRUE)
+pos_max <- which(X == max(X), arr.ind = TRUE)
+
+# c. Création de X01 en une seule instruction et vérification de ses dimensions/classe
+X01 <- ifelse(X > 3, 1, 0)
+is.matrix(X01)
+dim(X01)
+```
+
+- **a.** La matrice `X` contient **`r nb_sup3` éléments** strictement supérieurs à 3[cite: 2].
+- **b.** Le minimum ($`r round(min(X), 2)`$) se trouve à la position **(ligne `r pos_min[1, 1]`, colonne `r pos_min[1, 2]`)**, et le maximum ($`r round(max(X), 2)`$) se situe à la position **(ligne `r pos_max[1, 1]`, colonne `r pos_max[1, 2]`)**[cite: 2].
+- **c.** L'objet `X01` est bien une matrice (`is.matrix(X01)` vaut `r is.matrix(X01)`) de dimensions **`r paste(dim(X01), collapse = " x ")`**[cite: 2].
+
+## A3
+
+```{r A3}
+# a. Calcul des sommes des lignes, colonnes et des deux diagonales de durer
+sommes_lignes <- rowSums(durer)
+sommes_colonnes <- colSums(durer)
+somme_diag <- sum(diag(durer))
+somme_antidiag <- sum(diag(durer[, ncol(durer):1]))
+
+sommes_lignes
+sommes_colonnes
+c(diagonale = somme_diag, antidiagonale = somme_antidiag)
+
+# b. Instruction unique testant si une matrice est magique (appliquée à durer puis candidat)
+length(unique(c(rowSums(durer), colSums(durer), sum(diag(durer)), sum(diag(durer[, ncol(durer):1]))))) == 1
+length(unique(c(rowSums(candidat), colSums(candidat), sum(diag(candidat)), sum(diag(candidat[, ncol(candidat):1]))))) == 1
+
+# c. Diagnostic de la matrice candidat
+rowSums(candidat)
+colSums(candidat)
+sum(diag(candidat))
+sum(diag(candidat[, ncol(candidat):1]))
+```
+
+- **a.** Pour le carré de Dürer, toutes les lignes, toutes les colonnes ainsi que les deux diagonales ont pour somme commune **`r somme_diag`**[cite: 2].
+- **b.** Le test renvoie **`TRUE`** pour `durer` (c'est un carré magique) et **`FALSE`** pour `candidat`[cite: 2].
+- **c.** Dans `candidat`, la constante magique attendue est **15**. Or, la **3e ligne** somme à 16, la **3e colonne** somme à 16, et la **diagonale principale** ($8 + 5 + 3$) somme également à 16. L'intersection de ces trois éléments est la case **(ligne 3, colonne 3)** qui vaut `3` : il faudrait la remplacer par **`2`** pour obtenir un carré magique parfait[cite: 2].
+
+## A4
+
+```{r A4}
+# Table de multiplication de 1 à 10 avec outer()
+table_mult <- outer(1:10, 1:10, "*")
+
+# a. Nombre de produits distincts
+nb_distincts <- length(unique(as.vector(table_mult)))
+
+# b. Proportion des cases contenant un nombre pair
+prop_pairs <- mean(table_mult %% 2 == 0)
+
+# c. Extraction des valeurs situées strictement au-dessus de la diagonale
+valeurs_sup <- table_mult[upper.tri(table_mult, diag = FALSE)]
+nb_sup <- length(valeurs_sup)
+```
+
+- **a.** La table de multiplication contient **`r nb_distincts` produits distincts**[cite: 2].
+- **b.** La proportion de cases contenant un nombre pair est de **`r prop_pairs`** (soit **`r prop_pairs * 100` %** des 100 cases)[cite: 2].
+- **c.** Il y a **`r nb_sup` valeurs** situées strictement au-dessus de la diagonale principale (ce qui correspond bien à $\frac{10 \times 9}{2} = 45$)[cite: 2].
+
+## A5
+
+```{r A5}
+# a. Altitude maximale et position(s)
+alt_max <- max(volcano)
+pos_volcano_max <- which(volcano == alt_max, arr.ind = TRUE)
+pos_volcano_max
+
+# b. Proportion du terrain au-dessus de 150 m
+prop_150 <- mean(volcano > 150)
+
+# c. Ligne ayant l'altitude moyenne la plus élevée
+ligne_max_moy <- which.max(rowMeans(volcano))
+
+# d. Dénivelé (max - min) de chaque colonne et colonne au plus fort dénivelé
+deniveles <- apply(volcano, 2, function(col) max(col) - min(col))
+col_max_denivele <- which.max(deniveles)
+
+# e. Retournement de la matrice de haut en bas et affichage côte à côte
+volcano_retourne <- volcano[nrow(volcano):1, ]
+
+par(mfrow = c(1, 2))
+image(volcano, main = "Volcan original")
+image(volcano_retourne, main = "Volcan retourné (haut/bas)")
+par(mfrow = c(1, 1))
+```
+
+- **a.** L'altitude maximale est de **`r alt_max` m**, atteinte aux coordonnées **`r paste0("(ligne ", pos_volcano_max[, 1], ", colonne ", pos_volcano_max[, 2], ")", collapse = " et ")`**[cite: 3].
+- **b.** Une proportion de **`r round(prop_150, 4)`** (soit **`r round(prop_150 * 100, 2)` %**) du terrain se trouve strictement au-dessus de 150 m[cite: 3].
+- **c.** La **ligne `r ligne_max_moy`** possède l'altitude moyenne la plus élevée ($`r round(max(rowMeans(volcano)), 2)`$ m)[cite: 3].
+- **d.** La **colonne `r col_max_denivele`** présente le plus fort dénivelé avec **`r max(deniveles)` m** d'amplitude[cite: 3].
+- **e.** L'inversion de l'ordre des lignes (`nrow(volcano):1`) permet de retourner verticalement la matrice topographique[cite: 3].
+
+
+---
+
+# Partie B : Algèbre linéaire appliquée
+
+## B1
+
+```{r B1}
+# a. Chiffre d'affaires de chaque magasin par produit matriciel
+ca_magasins <- Q %*% prix
+ca_magasins
+
+# b. Marge de chaque magasin (prix - coût unitaire)
+marge_unitaire <- prix - cout
+marge_magasins <- Q %*% marge_unitaire
+marge_magasins
+
+# c. Matrice du CA par magasin et par produit (3x4) via diag(prix)
+CA_detail <- Q %*% diag(prix)
+colnames(CA_detail) <- colnames(Q)
+CA_detail
+
+# Combinaison magasin x produit rapportant le plus
+pos_max_ca <- which(CA_detail == max(CA_detail), arr.ind = TRUE)
+mag_top <- rownames(CA_detail)[pos_max_ca[1, 1]]
+prod_top <- colnames(CA_detail)[pos_max_ca[1, 2]]
+
+# d. Vérification que la somme des lignes redonne la réponse a.
+all.equal(rowSums(CA_detail), as.vector(ca_magasins), check.attributes = FALSE)
+```
+
+- **a.** Le chiffre d'affaires hebdomadaire s'élève à **`r ca_magasins["Lyon", 1]` €** pour Lyon, **`r ca_magasins["Lille", 1]` €** pour Lille et **`r ca_magasins["Nantes", 1]` €** pour Nantes[cite: 3].
+- **b.** La marge générée est de **`r marge_magasins["Lyon", 1]` €** pour Lyon, **`r marge_magasins["Lille", 1]` €** pour Lille et **`r marge_magasins["Nantes", 1]` €** pour Nantes[cite: 3].
+- **c.** La combinaison magasin $\times$ produit qui rapporte le plus est **`r mag_top` – `r prod_top`** avec un montant de **`r max(CA_detail)` €**[cite: 3].
+- **d.** La fonction `rowSums(CA_detail)` redonne exactement les mêmes montants que le produit matriciel `Q %*% prix`[cite: 3].
+
+## B2
+
+```{r B2}
+# a. Résolution du système linéaire M * x = stock
+quantites_aliments <- solve(M, stock)
+names(quantites_aliments) <- paste0("Aliment_", 1:4)
+quantites_aliments
+
+# b. Vérification de la solution
+all.equal(as.vector(M %*% quantites_aliments), stock)
+
+# c. Remplacement de la 4e ligne par la somme des lignes 1 et 2
+M_sing <- M
+M_sing[4, ] <- M_sing[1, ] + M_sing[2, ]
+
+det_M_sing <- det(M_sing)
+det_M_sing
+
+# Appel sécurisé à solve() pour éviter l'arrêt du knit
+tryCatch(solve(M_sing, stock), error = function(e) e$message)
+```
+
+- **a.** Pour épuiser exactement le stock, il faut produire respectivement **`r quantites_aliments[1]`**, **`r quantites_aliments[2]`**, **`r quantites_aliments[3]`** et **`r quantites_aliments[4]` tonnes** des quatre aliments[cite: 4].
+- **b.** Le produit matriciel `M %*% quantites_aliments` redonne exactement le vecteur `stock` (`r paste(stock, collapse = ", ")`)[cite: 4].
+- **c.** Le déterminant de cette nouvelle matrice est nul (`det(M_sing)` $\approx$ **`r round(det_M_sing, 16)`**). L'appel à `solve()` génère une erreur (`system is computationally singular`) car les lignes de la matrice sont désormais linéairement dépendantes (la 4e ligne est une combinaison linéaire des deux premières) : la matrice n'est donc plus inversible[cite: 4].
+
+## B3
+
+```{r B3}
+# a. Vérification que chaque ligne de P somme à 1
+rowSums(P)
+all.equal(as.vector(rowSums(P)), rep(1, nrow(P)))
+
+# b. Parts de marché dans 1, 2 et 3 mois
+parts1 <- parts0 %*% P
+parts2 <- parts1 %*% P
+parts3 <- parts2 %*% P
+
+rbind(Mois_1 = parts1, Mois_2 = parts2, Mois_3 = parts3)
+
+# c. Calcul des parts dans 12 mois via P^2, P^4 et P^8
+P2 <- P %*% P
+P4 <- P2 %*% P2
+P8 <- P4 %*% P4
+P12 <- P8 %*% P4
+
+parts12 <- parts0 %*% P12
+parts12
+
+# d. Calcul de P^64 par élévations au carré successives
+P16 <- P8 %*% P8
+P32 <- P16 %*% P16
+P64 <- P32 %*% P32
+round(P64, 6)
+
+# e. Recherche de la distribution stationnaire avec eigen()
+res_eigen <- eigen(t(P))
+pi_stat <- Re(res_eigen$vectors[, 1])
+pi_stat <- pi_stat / sum(pi_stat)
+names(pi_stat) <- colnames(P)
+
+round(pi_stat, 6)
+all.equal(as.vector(P64[1, ]), as.vector(pi_stat))
+```
+
+- **a.** La somme de chaque ligne de `P` vaut bien **1**, confirmant qu'il s'agit d'une matrice stochastique (de transition)[cite: 4].
+- **b.** Au bout de 3 mois, les parts de marché sont de **`r round(parts3[1]*100, 2)` %** pour A, **`r round(parts3[2]*100, 2)` %** pour B et **`r round(parts3[3]*100, 2)` %** pour C[cite: 4].
+- **c.** Dans 12 mois ($P^{12} = P^8 \times P^4$), les parts de marché atteindront **`r round(parts12[1]*100, 2)` %** pour A, **`r round(parts12[2]*100, 2)` %** pour B et **`r round(parts12[3]*100, 2)` %** pour C[cite: 4].
+- **d.** On remarque que les **trois lignes de $P^{64}$ sont identiques**. Cela signifie qu'à long terme (horizon de 64 mois), la chaîne de Markov converge vers un état d'équilibre indépendant de l'opérateur d'origine du client[cite: 4].
+- **e.** Le vecteur propre normalisé de $P^\top$ associé à la valeur propre 1 donne la distribution stationnaire $\pi = (`r paste(round(pi_stat, 4), collapse = ", ")`)$, qui est strictement identique aux lignes de $P^{64}$[cite: 4].
+
+---
+
+# Partie C : Le Titanic, un array à 4 dimensions
+
+## C1
+
+```{r C1}
+# Nombre total de personnes à bord
+total_bord <- sum(Titanic)
+
+# Répartition par classe
+par_classe <- apply(Titanic, "Class", sum)
+par_classe
+
+# Part de l'équipage (Crew)
+part_crew <- par_classe["Crew"] / total_bord
+```
+
+- Il y avait au total **`r total_bord` personnes** à bord du Titanic[cite: 4].
+- La répartition par classe est la suivante : **`r par_classe["1st"]`** en 1re classe, **`r par_classe["2nd"]`** en 2e classe, **`r par_classe["3rd"]`** en 3e classe et **`r par_classe["Crew"]`** membres d'équipage[cite: 4].
+- L'équipage représentait **`r round(part_crew * 100, 2)` %** des personnes à bord[cite: 4].
+
+## C2
+
+```{r C2}
+# Taux de survie global (en %)
+survie_globale <- (sum(Titanic[, , , "Yes"]) / sum(Titanic)) * 100
+
+# Taux de survie par classe (en %)
+tab_classe <- apply(Titanic, c("Class", "Survived"), sum)
+survie_classe <- (tab_classe[, "Yes"] / rowSums(tab_classe)) * 100
+
+# Taux de survie par sexe (en %)
+tab_sexe <- apply(Titanic, c("Sex", "Survived"), sum)
+survie_sexe <- (tab_sexe[, "Yes"] / rowSums(tab_sexe)) * 100
+
+round(survie_globale, 2)
+round(survie_classe, 2)
+round(survie_sexe, 2)
+```
+
+- **Taux de survie global :** **`r round(survie_globale, 2)` %**[cite: 5].
+- **Par classe :** 1re classe (**`r round(survie_classe["1st"], 2)` %**), 2e classe (**`r round(survie_classe["2nd"], 2)` %**), 3e classe (**`r round(survie_classe["3rd"], 2)` %**) et équipage (**`r round(survie_classe["Crew"], 2)` %**)[cite: 5].
+- **Par sexe :** Femmes (**`r round(survie_sexe["Female"], 2)` %**) contre Hommes (**`r round(survie_sexe["Male"], 2)` %**)[cite: 5].
+
+## C3
+
+```{r C3}
+# Réduction sur les dimensions Sex, Age et Survived
+tab_sexe_age <- apply(Titanic, c(2, 3, 4), sum)
+
+# Taux de survie (%) pour les 4 groupes sexe x âge
+survie_sexe_age <- (tab_sexe_age[, , "Yes"] / (tab_sexe_age[, , "Yes"] + tab_sexe_age[, , "No"])) * 100
+round(survie_sexe_age, 2)
+```
+
+- Les taux de survie par groupe sont : **Femmes adultes (`r round(survie_sexe_age["Female", "Adult"], 2)` %)**, **Filles (`r round(survie_sexe_age["Female", "Child"], 2)` %)**, **Garçons (`r round(survie_sexe_age["Male", "Child"], 2)` %)** et **Hommes adultes (`r round(survie_sexe_age["Male", "Adult"], 2)` %)**[cite: 5].
+- La règle *« les femmes et les enfants d'abord »* a globalement été appliquée, puisque les trois groupes composés de femmes ou d'enfants ont un taux de survie supérieur à 45 %, alors que plus de 80 % des hommes adultes ont péri[cite: 5].
+
+## C4
+
+```{r C4}
+# Matrice 4x2 du taux de survie par classe et par sexe
+tab_cs <- apply(Titanic, c("Class", "Sex", "Survived"), sum)
+survie_cs <- (tab_cs[, , "Yes"] / (tab_cs[, , "Yes"] + tab_cs[, , "No"])) * 100
+round(survie_cs, 2)
+```
+
+- Les **femmes de 3e classe** ont survécu à **`r round(survie_cs["3rd", "Female"], 2)` %**, contre **`r round(survie_cs["1st", "Male"], 2)` %** pour les **hommes de 1re classe**[cite: 5].
+- On en conclut que la priorité accordée au sexe féminin primait sur la classe sociale, mais que la classe sociale jouait néanmoins un rôle déterminant au sein d'un même sexe (une femme de 1re classe avait `r round(survie_cs["1st", "Female"], 2)` % de chances de survie, soit plus du double d'une femme de 3e classe)[cite: 5].
+
+## C5
+
+```{r C5}
+# Extraction de la tranche correspondant aux enfants ("Child")
+enfants <- apply(Titanic[, , "Child", ], c("Class", "Survived"), sum)
+enfants_total <- rowSums(enfants)
+enfants_survecu <- enfants[, "Yes"]
+
+cbind(Total = enfants_total, Survecu = enfants_survecu, Decedes = enfants[, "No"])
+```
+
+- **Nombre d'enfants par classe :** `r enfants_total["1st"]` en 1re classe, `r enfants_total["2nd"]` en 2e classe, `r enfants_total["3rd"]` en 3e classe et `r enfants_total["Crew"]` dans l'équipage[cite: 5].
+- **Enfants ayant survécu :** `r enfants_survecu["1st"]` en 1re classe, `r enfants_survecu["2nd"]` en 2e classe et `r enfants_survecu["3rd"]` en 3e classe[cite: 5].
+- **Oui**, 100 % des enfants voyageant en 1re et 2e classe ont survécu (aucun décès enregistré dans ces deux classes), contrairement à la 3e classe où 52 enfants sur 79 ont péri[cite: 5].
+
+## C6
+
+```{r C6}
+# Conversion en data frame
+df_titanic <- as.data.frame(Titanic)
+dim(df_titanic)
+head(df_titanic)
+
+# Retrouver le taux de survie par classe via xtabs()
+tab_xtabs <- xtabs(Freq ~ Class + Survived, data = df_titanic)
+survie_df <- (tab_xtabs[, "Yes"] / rowSums(tab_xtabs)) * 100
+
+round(survie_df, 2)
+all.equal(survie_df, survie_classe)
+```
+
+- On obtient un data frame de **`r nrow(df_titanic)` lignes**, car l'array d'origine comporte $4 \text{ (classes)} \times 2 \text{ (sexes)} \times 2 \text{ (âges)} \times 2 \text{ (survie)} = 32$ combinaisons possibles, chaque combinaison devenant une ligne associée à son effectif (`Freq`)[cite: 5].
+- La fonction `xtabs(Freq ~ Class + Survived, data = df_titanic)` permet de reconstituer la table de contingence et de retrouver exactement les taux de survie par classe calculés en C2[cite: 5].
+
+---
+
+# Partie D : Listes et résultats de fonctions
+
+## D1
+
+**Prédictions avant exécution :**
+
+1. `l[1]` : **classe `list`**. Les crochets simples extraient une sous-liste de longueur 1 contenant l'élément nommé `a` (le vecteur `1:3`).
+2. `l[[1]]` : **classe `integer`**. Les doubles crochets extraient directement le contenu du premier élément, à savoir le vecteur d'entiers `1, 2, 3`.
+3. `l$c$e` : **classe `numeric`**. Accède à la sous-liste `c`, puis extrait directement la valeur de son élément `e`, soit `2.5`.
+4. `l[["c"]]["d"]` : **classe `list`**. `l[["c"]]` extrait la sous-liste `c`, et `["d"]` en extrait une sous-liste de longueur 1 contenant `d = TRUE`.
+5. `length(l)` : **classe `integer`**. Renvoie le nombre d'éléments de premier niveau de la liste `l`, soit `3` (`a`, `b` et `c`).
+6. `unlist(l)` : **classe `character`**. Aplatit récursivement toute la liste en un seul vecteur atomique nommé de longueur 5 (`1, 2, 3, TRUE, 2.5`), converti en texte par coercition à cause de la présence de `"x"`.
+
+```{r D1}
+# Exécution et vérification
+l <- list(a = 1:3, b = "x", c = list(d = TRUE, e = 2.5))
+
+str(l[1])
+str(l[[1]])
+str(l$c$e)
+str(l[["c"]]["d"])
+length(l)
+unlist(l)
+class(unlist(l))
+```
+
+- **Explication :** La distinction fondamentale repose sur l'opérateur d'indexation (`[` conserve toujours l'enveloppe `list`, tandis que `[[` ou `$` extrait l'objet interne) ainsi que sur la règle de coercition de `unlist()`, qui aligne tous les éléments sur le type le plus souple (ici `character`)[cite: 5].
+
+## D2
+
+```{r D2}
+# Création de la liste fiche
+fiche <- list(
+  identite = list(
+    nom = "Dupont",
+    prenom = "Camille",
+    annee_naissance = 2004
+  ),
+  notes = c(R = 16.5, stat = 14, eco = 12.5, anglais = 15),
+  absences = 2L,
+  commentaires = c("Très bonne participation en TP.", "Travail régulier.")
+)
+
+# a. Affichage du prénom de deux façons différentes
+fiche$identite$prenom
+fiche[["identite"]][["prenom"]]
+
+# b. Calcul de la moyenne des notes à partir de la liste
+moyenne_fiche <- mean(fiche$notes)
+moyenne_fiche
+
+# c. Ajout de l'élément age calculé à partir de 2026
+fiche$age <- 2026 - fiche$identite$annee_naissance
+
+# d. Suppression de commentaires et affichage de la structure
+fiche$commentaires <- NULL
+str(fiche)
+```
+
+- **a.** Le prénom extrait par les deux méthodes est **`r fiche$identite$prenom`**[cite: 6].
+- **b.** La moyenne des 4 matières est de **`r moyenne_fiche` / 20**[cite: 6].
+- **c & d.** L'âge calculé est de **`r fiche$age` ans** et l'élément `commentaires` a bien été supprimé de la structure[cite: 6].
+
+## D3
+
+```{r D3}
+# a. Nombre d'étudiants et nom du 3e
+nb_etudiants <- length(promo)
+nom_3e <- promo[[3]]$nom
+
+# b. Extraction du vecteur des noms et celui des filières
+noms_promo <- sapply(promo, "[[", "nom")
+filieres_promo <- sapply(promo, "[[", "filiere")
+
+# c. Extraction de la liste des vecteurs de notes et nombre de notes par étudiant
+liste_notes <- lapply(promo, "[[", "notes")
+nb_notes <- lengths(liste_notes)
+
+# d. Calcul de la moyenne de chaque étudiant et création du data frame bilan trié
+moyennes_promo <- sapply(liste_notes, mean)
+
+bilan <- data.frame(
+  nom = noms_promo,
+  filiere = filieres_promo,
+  nb_notes = nb_notes,
+  moyenne = round(moyennes_promo, 2)
+)
+
+# Tri par moyenne décroissante
+bilan <- bilan[order(bilan$moyenne, decreasing = TRUE), ]
+bilan
+```
+
+- **a.** La liste `promo` contient **`r nb_etudiants` étudiants**, et le 3e étudiant se nomme **`r nom_3e`**[cite: 6].
+- **b.** Les noms sont `r paste(noms_promo, collapse = ", ")` et les filières sont `r paste(filieres_promo, collapse = ", ")`[cite: 6].
+- **c.** Le nombre de notes par étudiant est respectivement de **`r paste(nb_notes, collapse = ", ")`**[cite: 6].
+- **d.** L'étudiant en tête du classement est **`r bilan$nom[1]`** avec une moyenne de **`r bilan$moyenne[1]`**[cite: 6].
+- **e.** On ne peut pas ranger directement ces notes dans une matrice car **chaque étudiant possède un nombre différent de notes** (vecteurs de longueurs 2, 3 et 4), alors qu'une matrice exige un format rectangulaire strict où toutes les lignes ont exactement le même nombre de colonnes[cite: 6].
+
+## D4
+
+```{r D4}
+# a. Découpage en mots avec strsplit() et comptage par phrase
+mots_liste <- strsplit(phrases, split = " ")
+nb_mots_phrase <- lengths(mots_liste)
+nb_mots_phrase
+
+# b. Rassemblement en un seul vecteur en minuscules
+tous_mots <- tolower(unlist(mots_liste))
+total_mots <- length(tous_mots)
+mots_distincts <- length(unique(tous_mots))
+
+# c. Les 3 mots les plus fréquents
+freq_mots <- sort(table(tous_mots), decreasing = TRUE)
+top3_mots <- head(freq_mots, 3)
+top3_mots
+
+# d. Le mot le plus long
+mot_plus_long <- tous_mots[which.max(nchar(tous_mots))]
+mot_plus_long
+```
+
+- **a.** Chaque phrase compte respectivement **`r paste(nb_mots_phrase, collapse = ", ")` mots**[cite: 7].
+- **b.** Il y a **`r total_mots` mots au total**, dont **`r mots_distincts` mots distincts**[cite: 7].
+- **c.** Les 3 mots les plus fréquents sont **`r names(top3_mots)[1]`** (`r top3_mots[1]` fois), **`r names(top3_mots)[2]`** (`r top3_mots[2]` fois) et **`r names(top3_mots)[3]`** (`r top3_mots[3]` fois)[cite: 7].
+- **d.** Le mot le plus long est **`r mot_plus_long`** (avec `r nchar(mot_plus_long)` lettres)[cite: 7].
+
+## D5
+
+```{r D5}
+# a. Test de Student sur le jeu de données sleep
+res_ttest <- t.test(extra ~ group, data = sleep)
+diff_moy <- res_ttest$estimate[1] - res_ttest$estimate[2]
+ic_inf <- res_ttest$conf.int[1]
+ic_sup <- res_ttest$conf.int[2]
+pval <- res_ttest$p.value
+
+# b. Régression linéaire multiple sur mtcars
+mod_lm <- lm(mpg ~ wt + hp, data = mtcars)
+sum_lm <- summary(mod_lm)
+
+# Extraction des coefficients et du R²
+coefs <- coef(mod_lm)
+r2 <- sum_lm$r.squared
+
+coefs
+r2
+
+# Voiture ayant le résidu le plus grand en valeur absolue
+residus <- residuals(mod_lm)
+voiture_max_res <- names(which.max(abs(residus)))
+val_max_res <- residus[voiture_max_res]
+```
+
+- **a.** La comparaison des deux somnifères révèle une différence moyenne de sommeil supplémentaire de **`r round(diff_moy, 2)` heures** entre le groupe 1 et le groupe 2, avec un intervalle de confiance à 95 % de **`r paste0("[", round(ic_inf, 2), " ; ", round(ic_sup, 2), "]")`** et une p-valeur de **`r round(pval, 4)`** (ce qui ne permet pas de conclure à une différence statistiquement significative au seuil de 5 %)[cite: 7].
+- **b.** Dans le modèle linéaire, l'ordonnée à l'origine vaut **`r round(coefs[1], 2)`**, les coefficients associés au poids (`wt`) et à la puissance (`hp`) valent respectivement **`r round(coefs[2], 2)`** et **`r round(coefs[3], 4)`**, et le coefficient de détermination $R^2$ atteint **`r round(r2, 4)`** (soit `r round(r2 * 100, 1)` % de variance expliquée)[cite: 7]. La voiture présentant le résidu le plus important en valeur absolue est la **`r voiture_max_res`** avec un résidu de **`r round(val_max_res, 2)` mpg**[cite: 7].
