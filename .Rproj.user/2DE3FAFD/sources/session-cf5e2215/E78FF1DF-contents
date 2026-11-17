@@ -14,3 +14,34 @@ knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 # Chargement des objets fournis pour le TP (durer, candidat, Q, prix, cout, M, stock, P, parts0, promo, phrases)
 source("donnees_tp4.R")
 ```
+
+---
+
+# Partie A : Construire et manipuler des matrices
+
+## A1
+
+```{r A1}
+# Création de A (remplie par colonne par défaut) et B (remplie par ligne)
+A <- matrix(1:25, nrow = 5, ncol = 5)
+B <- matrix(1:25, nrow = 5, ncol = 5, byrow = TRUE)
+
+# Vérification en une seule instruction que B est la transposée de A
+identical(B, t(A))
+
+# Nommage des lignes et des colonnes de B
+rownames(B) <- paste0("L", 1:5)
+colnames(B) <- paste0("C", 1:5)
+
+# a. 3e colonne de B
+B[, 3]
+
+# b. Lignes 1 et 5 de B
+B[c(1, 5), ]
+
+# c. Colonne C1 par son nom sous forme de matrice (drop = FALSE)
+B[, "C1", drop = FALSE]
+```
+
+- L'instruction `identical(B, t(A))` renvoie **`r identical(B, t(A))`**, confirmant que la matrice $B$ est bien la transposée exacte de $A$.
+- L'utilisation de `drop = FALSE` dans `B[, "C1", drop = FALSE]` permet d'éviter la simplification en vecteur et de conserver la structure matricielle ($5 \times 1$)[cite: 1].
