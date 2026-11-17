@@ -260,3 +260,108 @@ all.equal(as.vector(P64[1, ]), as.vector(pi_stat))
 - **c.** Dans 12 mois ($P^{12} = P^8 \times P^4$), les parts de marché atteindront **`r round(parts12[1]*100, 2)` %** pour A, **`r round(parts12[2]*100, 2)` %** pour B et **`r round(parts12[3]*100, 2)` %** pour C[cite: 4].
 - **d.** On remarque que les **trois lignes de $P^{64}$ sont identiques**. Cela signifie qu'à long terme (horizon de 64 mois), la chaîne de Markov converge vers un état d'équilibre indépendant de l'opérateur d'origine du client[cite: 4].
 - **e.** Le vecteur propre normalisé de $P^\top$ associé à la valeur propre 1 donne la distribution stationnaire $\pi = (`r paste(round(pi_stat, 4), collapse = ", ")`)$, qui est strictement identique aux lignes de $P^{64}$[cite: 4].
+
+---
+
+# Partie C : Le Titanic, un array à 4 dimensions
+
+## C1
+
+```{r C1}
+# Nombre total de personnes à bord
+total_bord <- sum(Titanic)
+
+# Répartition par classe
+par_classe <- apply(Titanic, "Class", sum)
+par_classe
+
+# Part de l'équipage (Crew)
+part_crew <- par_classe["Crew"] / total_bord
+```
+
+- Il y avait au total **`r total_bord` personnes** à bord du Titanic[cite: 4].
+- La répartition par classe est la suivante : **`r par_classe["1st"]`** en 1re classe, **`r par_classe["2nd"]`** en 2e classe, **`r par_classe["3rd"]`** en 3e classe et **`r par_classe["Crew"]`** membres d'équipage[cite: 4].
+- L'équipage représentait **`r round(part_crew * 100, 2)` %** des personnes à bord[cite: 4].
+
+## C2
+
+```{r C2}
+# Taux de survie global (en %)
+survie_globale <- (sum(Titanic[, , , "Yes"]) / sum(Titanic)) * 100
+
+# Taux de survie par classe (en %)
+tab_classe <- apply(Titanic, c("Class", "Survived"), sum)
+survie_classe <- (tab_classe[, "Yes"] / rowSums(tab_classe)) * 100
+
+# Taux de survie par sexe (en %)
+tab_sexe <- apply(Titanic, c("Sex", "Survived"), sum)
+survie_sexe <- (tab_sexe[, "Yes"] / rowSums(tab_sexe)) * 100
+
+round(survie_globale, 2)
+round(survie_classe, 2)
+round(survie_sexe, 2)
+```
+
+- **Taux de survie global :** **`r round(survie_globale, 2)` %**[cite: 5].
+- **Par classe :** 1re classe (**`r round(survie_classe["1st"], 2)` %**), 2e classe (**`r round(survie_classe["2nd"], 2)` %**), 3e classe (**`r round(survie_classe["3rd"], 2)` %**) et équipage (**`r round(survie_classe["Crew"], 2)` %**)[cite: 5].
+- **Par sexe :** Femmes (**`r round(survie_sexe["Female"], 2)` %**) contre Hommes (**`r round(survie_sexe["Male"], 2)` %**)[cite: 5].
+
+## C3
+
+```{r C3}
+# Réduction sur les dimensions Sex, Age et Survived
+tab_sexe_age <- apply(Titanic, c(2, 3, 4), sum)
+
+# Taux de survie (%) pour les 4 groupes sexe x âge
+survie_sexe_age <- (tab_sexe_age[, , "Yes"] / (tab_sexe_age[, , "Yes"] + tab_sexe_age[, , "No"])) * 100
+round(survie_sexe_age, 2)
+```
+
+- Les taux de survie par groupe sont : **Femmes adultes (`r round(survie_sexe_age["Female", "Adult"], 2)` %)**, **Filles (`r round(survie_sexe_age["Female", "Child"], 2)` %)**, **Garçons (`r round(survie_sexe_age["Male", "Child"], 2)` %)** et **Hommes adultes (`r round(survie_sexe_age["Male", "Adult"], 2)` %)**[cite: 5].
+- La règle *« les femmes et les enfants d'abord »* a globalement été appliquée, puisque les trois groupes composés de femmes ou d'enfants ont un taux de survie supérieur à 45 %, alors que plus de 80 % des hommes adultes ont péri[cite: 5].
+
+## C4
+
+```{r C4}
+# Matrice 4x2 du taux de survie par classe et par sexe
+tab_cs <- apply(Titanic, c("Class", "Sex", "Survived"), sum)
+survie_cs <- (tab_cs[, , "Yes"] / (tab_cs[, , "Yes"] + tab_cs[, , "No"])) * 100
+round(survie_cs, 2)
+```
+
+- Les **femmes de 3e classe** ont survécu à **`r round(survie_cs["3rd", "Female"], 2)` %**, contre **`r round(survie_cs["1st", "Male"], 2)` %** pour les **hommes de 1re classe**[cite: 5].
+- On en conclut que la priorité accordée au sexe féminin primait sur la classe sociale, mais que la classe sociale jouait néanmoins un rôle déterminant au sein d'un même sexe (une femme de 1re classe avait `r round(survie_cs["1st", "Female"], 2)` % de chances de survie, soit plus du double d'une femme de 3e classe)[cite: 5].
+
+## C5
+
+```{r C5}
+# Extraction de la tranche correspondant aux enfants ("Child")
+enfants <- apply(Titanic[, , "Child", ], c("Class", "Survived"), sum)
+enfants_total <- rowSums(enfants)
+enfants_survecu <- enfants[, "Yes"]
+
+cbind(Total = enfants_total, Survecu = enfants_survecu, Decedes = enfants[, "No"])
+```
+
+- **Nombre d'enfants par classe :** `r enfants_total["1st"]` en 1re classe, `r enfants_total["2nd"]` en 2e classe, `r enfants_total["3rd"]` en 3e classe et `r enfants_total["Crew"]` dans l'équipage[cite: 5].
+- **Enfants ayant survécu :** `r enfants_survecu["1st"]` en 1re classe, `r enfants_survecu["2nd"]` en 2e classe et `r enfants_survecu["3rd"]` en 3e classe[cite: 5].
+- **Oui**, 100 % des enfants voyageant en 1re et 2e classe ont survécu (aucun décès enregistré dans ces deux classes), contrairement à la 3e classe où 52 enfants sur 79 ont péri[cite: 5].
+
+## C6
+
+```{r C6}
+# Conversion en data frame
+df_titanic <- as.data.frame(Titanic)
+dim(df_titanic)
+head(df_titanic)
+
+# Retrouver le taux de survie par classe via xtabs()
+tab_xtabs <- xtabs(Freq ~ Class + Survived, data = df_titanic)
+survie_df <- (tab_xtabs[, "Yes"] / rowSums(tab_xtabs)) * 100
+
+round(survie_df, 2)
+all.equal(survie_df, survie_classe)
+```
+
+- On obtient un data frame de **`r nrow(df_titanic)` lignes**, car l'array d'origine comporte $4 \text{ (classes)} \times 2 \text{ (sexes)} \times 2 \text{ (âges)} \times 2 \text{ (survie)} = 32$ combinaisons possibles, chaque combinaison devenant une ligne associée à son effectif (`Freq`)[cite: 5].
+- La fonction `xtabs(Freq ~ Class + Survived, data = df_titanic)` permet de reconstituer la table de contingence et de retrouver exactement les taux de survie par classe calculés en C2[cite: 5].
